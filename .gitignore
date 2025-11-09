@@ -1,0 +1,6 @@
+# Python
+venv/
+__pycache__/
+data/
+cmudict.phones
+cmudict.symbols
