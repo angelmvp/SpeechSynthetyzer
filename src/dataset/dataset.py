@@ -1,8 +1,8 @@
 import torch
 import itertools
-from src.vocab.vocab import Vocab
-class Dataset(torch.utils.data.Dataset):
-    def __init__(self,vocab:Vocab):
+from vocab.vocab import VocabMVP
+class DatasetMVP(torch.utils.data.Dataset):
+    def __init__(self,vocab:VocabMVP):
         super().__init__()
         self.X=[]
         self.Y=[]
@@ -10,7 +10,7 @@ class Dataset(torch.utils.data.Dataset):
         self.vocab=vocab
         self.readDataset()
     def readDataset(self):
-        fileName = "./data/cmudict.dict"
+        fileName = "../data/cmudict.dict"
         with open(fileName,'r') as file:
             self.X =[]
             self.Y=[]
@@ -18,24 +18,21 @@ class Dataset(torch.utils.data.Dataset):
                 linea = linea.strip().split(" ")
                 palabra = linea[0]
                 fonos = linea[1:]
-                y = self.vocab.phones_to_indexes(fonos)
-                x= self.vocab.word_to_indexes(palabra)
-                print(x)
-                print(y)
-                break
-                self.X.append(palabra)
-                self.data.append((palabra,y))
-
+                fonosNormalizados = self.vocab.normalizeFono(fonos)
+                
+                #print(fonos)
+                palabraNormalizada=self.vocab.normalizeWord(palabra)
+                
+                x= self.vocab.word_to_indexes(palabraNormalizada)
+                y = self.vocab.phones_to_indexes(fonosNormalizados)
+                # print(palabraNormalizada,fonosNormalizados)
+                # print(x,y)
+                self.data.append((x,y))
+    
     def __getitem__(self, index):
         x = self.data[index][0]
-        y = self.data[index][1:]
+        y = self.data[index][1]
         return torch.tensor(x),torch.tensor(y)
     def __len__(self):
         return len(self.data)
     
-
-vocabulario = Vocab()
-dataset = Dataset(vocab=vocabulario)
-print(dataset.X[500:505])
-print(dataset.Y[500:505])
-print(dataset.__getitem__(500))
