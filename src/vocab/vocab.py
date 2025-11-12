@@ -15,7 +15,7 @@ class VocabMVP:
             linea = line.strip().split("\t")
             tipo_fono = linea[1]
             fono= linea[0]
-            print(tipo_fono,fono)
+            # print(tipo_fono,fono)
             if tipo_fono not in phones:
                 phones[tipo_fono] = []
             phones[tipo_fono].append(fono)
