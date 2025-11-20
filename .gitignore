@@ -5,3 +5,5 @@ data/
 cmudict.phones
 cmudict.symbols
 cmudict.dict
+*.wav
+*.pt

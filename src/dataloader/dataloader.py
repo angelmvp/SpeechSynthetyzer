@@ -3,7 +3,7 @@ from torch.nn.utils.rnn import pad_sequence
 import torch
 class DataLoaderMVP(DataLoader):
     def __init__(self,dataset,batch_size):
-        super().__init__(dataset,batch_size,shuffle=True,collate_fn=self.collate_fn)
+        super().__init__(dataset, batch_size,shuffle=True,collate_fn=self.collate_fn)
     def collate_fn(self,batch):
         x_batch, y_batch = zip(*batch)
         max_len = max(
