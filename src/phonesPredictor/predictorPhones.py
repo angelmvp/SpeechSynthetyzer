@@ -22,7 +22,19 @@ class PredictorPhones():
         normalizer = NormalizerMVP()
         palabras = normalizer.normalize(oracion)
         todosFonos=[]
-        for palabra in palabras:
-            fonos = self.obtener_fonos_palabra(palabra)
-            todosFonos.append(fonos)
+        PAUSAS={
+            ",": "pau",
+            ".": "pau pau",
+            ";": "pau",
+            ":": "pau",
+            "?": "pau up",
+            "!": "pau up"
+        }
+
+        for token in palabras:
+            if token in PAUSAS:
+                todosFonos.append(PAUSAS[token])
+            else:
+                fonos = self.obtener_fonos_palabra(token)
+                todosFonos.append(fonos)
         return todosFonos

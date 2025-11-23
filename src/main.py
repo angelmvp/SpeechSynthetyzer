@@ -40,17 +40,26 @@ def main_for_train():
 def reproducirAudio(fonos):
 	pass
 def main(path_model,modelo,oracion):
+	print("Oracion Original",oracion )
 	predictor.load(path_model)
+
+	
 	fonos = predictor.obtener_fonos_oracion(oracion)
-	print(fonos)
 	for i in fonos:
-		print (' '.join(i))
+		if i == 'pau':
+			print(i, end=' | ')
+			continue
+		print (' '.join(i), end=' | ')
 	rep = Reproductor()
-	rep.reproducir_fonemas_oracion(fonos)
+	fonos_minuscular=[]
+	for f in fonos:
+		f_minusculas = [ph.lower() for ph in f]
+		fonos_minuscular.append(f_minusculas)
+	rep.reproducir_fonemas_oracion(fonos_minuscular)
 
 
 path = "model100.pt"
-oracion = "Hello this is a banana of my brother"
+oracion = "Bijan Robinson, is one of the best RB in the NFL. He was born on 21/09/2002 and his contract is worth $12.50 million per year."
 
 main(path,modelo,oracion)
 
