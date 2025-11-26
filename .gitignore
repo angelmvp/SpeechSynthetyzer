@@ -7,3 +7,8 @@ cmudict.symbols
 cmudict.dict
 *.wav
 *.pt
+*.env
+vite-project/.env
+*.json
+frontend/public
+frontend/node_modules
