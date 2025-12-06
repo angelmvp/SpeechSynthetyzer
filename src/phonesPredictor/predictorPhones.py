@@ -1,6 +1,7 @@
 from vocab.vocab import VocabMVP
 import torch
 from utils.normalizerMVP import NormalizerMVP
+import logging
 class PredictorPhones():
     def __init__(self,model,vocab:VocabMVP):
         self.model=model
@@ -22,6 +23,7 @@ class PredictorPhones():
         normalizer = NormalizerMVP()
         palabras = normalizer.normalize(oracion)
         todosFonos=[]
+        todos_tokens=[]
         PAUSAS={
             ",": "pau",
             ".": "pau pau",
@@ -35,6 +37,8 @@ class PredictorPhones():
             if token in PAUSAS:
                 todosFonos.append(PAUSAS[token])
             else:
+                logging.info(f"Processing word: {token}")
                 fonos = self.obtener_fonos_palabra(token)
                 todosFonos.append(fonos)
-        return todosFonos
+            todos_tokens.append(token)
+        return todos_tokens,todosFonos

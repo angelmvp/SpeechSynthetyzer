@@ -1,5 +1,5 @@
 from g2fmodules.mvpg2f import modelMVPG2F
-from g2fmodules.classifierMVP import classifierMVPG2F
+from g2fmodules.speechBrain import classifierMVPG2F
 from g2fmodules.modelTrained import modelTrained
 class G2F():
     def __init__(self):

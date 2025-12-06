@@ -23,9 +23,11 @@ export const api = {
     },
     post: async (endpoint: string, data: any) => {
         try {
+            console.log("Posting to:", `${API_URL}${endpoint}`, "with data:", data);
             const response = await fetch(`${API_URL}${endpoint}`, {
                 method: 'POST',
                 body: JSON.stringify(data),
+                
                 headers: {
                     'Content-Type': 'application/json'
                 }

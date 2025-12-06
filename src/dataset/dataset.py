@@ -3,7 +3,7 @@ import itertools
 from vocab.vocab import VocabMVP
 import random
 class DatasetMVP(torch.utils.data.Dataset):
-    def __init__(self,vocab:VocabMVP,N):
+    def __init__(self,vocab:VocabMVP,N=10000):
         super().__init__()
         self.data=[]
         self.vocab=vocab
