@@ -6,12 +6,14 @@ from vocab.vocab import VocabMVP
 from g2fmodules.mvpg2f import modelMVPG2F
 from phonesPredictor.predictorPhones import PredictorPhones
 from utils.normalizerMVP import NormalizerMVP
+from dataset.dataset import DatasetMVP
+from dataloader.dataloader import DataLoaderMVP
 from reproductor.reproductor import Reproductor
 from fastapi.responses import JSONResponse
 import base64
 from pathlib import Path
 import logging
-
+import torch
 # from reproductor.reproductor import Reproductor
 import os
 
@@ -40,21 +42,34 @@ def read_root():
 class PredictRequest(BaseModel):
 	text: str
 
-# Inicializar componentes reutilizando tu código
-vocab = VocabMVP()
-modelo = modelMVPG2F(vocab_size=len(vocab.word_to_index),
-                     phone_size=len(vocab.phone_to_index),
-                     embed_dim=128, hidden_dim=256)
-predictor = PredictorPhones(model=modelo, vocab=vocab)
-path_model = os.path.join(os.path.dirname(__file__), "..", "model100.pt")
-predictor.load(path_model)
-# MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "model100.pt")
-# try:
-#     predictor.load(MODEL_PATH)
-# except Exception as e:
-#     # Si no hay modelo cargado, la ruta puede requerir ajuste
-#     print("Aviso: no se pudo cargar modelo en", MODEL_PATH, e)
 
+N=10000
+BATCH_SIZE = 64
+EMBEDDING_DIM = 128
+HIDDEN_DIM = 256
+
+
+vocabulario = VocabMVP()
+print("VOCABULARIO_CREADO")
+
+# dataset = DatasetMVP(vocabulario,N)
+# print("DATASET_CREADO")
+
+# dataloader = DataLoaderMVP(dataset,batch_size=BATCH_SIZE)
+# print("DATALOADER_CREADO")	
+
+
+vocabulario_size=len(vocabulario.word_to_index)
+print("vocablakda SIISIISISZE",vocabulario_size)
+fonos_size = len(vocabulario.phone_to_index)
+modelo = modelMVPG2F(vocab_size=vocabulario_size,phone_size=fonos_size,embed_dim=EMBEDDING_DIM,hidden_dim=HIDDEN_DIM)
+print("MODELO_CREADO")
+
+predictor = PredictorPhones(model=modelo,vocab=vocabulario)
+print("PREDICTOR CREADO")
+path_model = "model50.pt"
+
+predictor.load(path_model)
 rep = Reproductor()
 @app.post("/predict")
 def predict(req: PredictRequest):
@@ -64,10 +79,10 @@ def predict(req: PredictRequest):
 		tokens_text,fonos = predictor.obtener_fonos_oracion(req.text)
 		tokens['tokens']=tokens_text
 		tokens['fonos']=fonos
-		output_dir = Path(__file__).resolve().parent / ".." / "tts_output"
+		output_dir = Path(__file__).resolve().parent / ".." / "output_synthesis"
 		output_dir.mkdir(parents=True, exist_ok=True)
 		audio_path = output_dir / "output_oracion.wav"
-		rep.reproducir_fonemas_oracion(fonos, output=str(audio_path))
+		rep.concatenar_fonemas(fonos, nombre_archivo_salida=str(audio_path.name))
 		logger.info(f"Generated audio at: {audio_path}")
 
 		with open(audio_path, "rb") as f:
@@ -85,15 +100,3 @@ def predict(req: PredictRequest):
 	except Exception as e:
 		logger.exception("Error in prediction")
 		raise HTTPException(status_code=500, detail=str(e))
-
-# @app.post("/speak")
-# def speak(req: PredictRequest):
-#     try:
-#         fonos = predictor.obtener_fonos_oracion(req.text)
-#         # convertir a minusculas como hace tu main.py
-#         fonos_minuscular = [[ph.lower() for ph in w] if isinstance(w, list) else w for w in fonos]
-#         out = reproductor.reproducir_fonemas_oracion(fonos_minuscular, output="output_oracion.wav")
-#         return {"output_file": out}
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-# # ...existing code...

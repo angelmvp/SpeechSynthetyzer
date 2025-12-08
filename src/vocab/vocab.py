@@ -1,6 +1,6 @@
 class VocabMVP:
     def __init__(self):
-        self.phone_to_index = {'PAD': 0, 'UNK': 1}
+        self.phone_to_index = {'PAD': 0, 'UNK': 1,'EOS': 2}
         self.index_to_phone = {}
         self.word_to_index= {'PAD': 0, 'UNK': 1}
         self.index_to_word = {}
@@ -26,7 +26,7 @@ class VocabMVP:
         for i,line in enumerate(file):
             symbol = line.strip()
             if symbol not in self.phone_to_index:
-                self.phone_to_index[symbol] = i + 2
+                self.phone_to_index[symbol] = i + 3
         self.index_to_phone = {v:k for k,v in self.phone_to_index.items()}
     def creat_vocab_words(self):
         vocabulario = "abcdefghijklmnopqrstuvwxyz'.-"
@@ -58,4 +58,3 @@ class VocabMVP:
                 return word[:index]
             index+=1
         return word
-     

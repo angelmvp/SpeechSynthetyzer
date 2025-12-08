@@ -1,127 +1,133 @@
-import os
 from pydub import AudioSegment
+import os
+import logging
+# --- CLASE REPRODUCTOR (Mantenida) ---
 
 class Reproductor():
-    def __init__(self):
-        self.tmp_dir = "./tmp_fonemas"
-        os.makedirs(self.tmp_dir, exist_ok=True)
-
-    def limpiar_fonema(self, fonema):
-        # Quitar números (AE1 → AE)
-        return ''.join([c for c in fonema if not c.isdigit()])
-
-    def generar_fonema(self, fonema):
-        """
-        Genera un .wav para un fonema individual usando espeak-ng.
-        """
-        if not isinstance(fonema, str):
-            raise ValueError(f"Se esperaba string pero recibí: {fonema}")
-
-        fonema_limpio = self.limpiar_fonema(fonema)
-        output_path = f"{self.tmp_dir}/{fonema_limpio}.wav"
-
-        cmd = f'espeak-ng -v en -w "{output_path}" "[[{fonema_limpio}]]"'
-        print(cmd)
-        os.system(cmd)
-
-        if not os.path.exists(output_path):
-            raise FileNotFoundError(f"No se generó el archivo del fonema: {output_path}")
-
-        return output_path
-
-    def generar_palabra_completa(self, lista_fonemas, nombre_archivo=None):
-        """
-        Genera un .wav para una palabra completa con todos sus fonemas en un solo comando.
-        Formato: [[FONEMA1]][[FONEMA2]][[FONEMA3]]...
-        """
-        if not isinstance(lista_fonemas, list):
-            raise ValueError("lista_fonemas debe ser una lista")
-
-        # Crear el formato de comando: [[FONEMA1]][[FONEMA2]][[FONEMA3]]...
-        fonemas_formateados = "".join([f"[[{self.limpiar_fonema(f)}]]" for f in lista_fonemas])
+    """
+    Clase para cargar fonemas individuales y concatenarlos para formar palabras o frases.
+    """
+    def __init__(self, path_audios="./reproductor/fonemas/", output_path="./output_synthesis"):
+        self.path_audios = path_audios
+        self.output_path = output_path
         
-        # Si no se proporciona nombre de archivo, crear uno basado en los fonemas
-        if nombre_archivo is None:
-            nombre_archivo = "".join([self.limpiar_fonema(f) for f in lista_fonemas])
-        
-        output_path = f"{self.tmp_dir}/{nombre_archivo}.wav"
+        # Crear el directorio de salida si no existe
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
+            
 
-        cmd = f'espeak-ng -v en -w "{output_path}" "{fonemas_formateados}"'
-        os.system(cmd)
-
-        if not os.path.exists(output_path):
-            raise FileNotFoundError(f"No se generó el archivo de la palabra: {output_path}")
-
-        return output_path
-
-    def unir_audios(self, archivos_wav, output="output.wav"):
+    def concatenar_fonemas(self, lista_fonemas: list, nombre_archivo_salida: str = "frase_sintetizada.wav"):
         """
-        Une múltiples archivos wav en uno solo.
+        Concatena una lista secuencial de fonemas para crear un archivo de audio WAV.
         """
-        audio_final = AudioSegment.silent(duration=50)  # Pequeño silencio inicial
-
-        for archivo in archivos_wav:
-            if os.path.exists(archivo):
-                segmento = AudioSegment.from_wav(archivo)
-                audio_final += segmento
+        audio_final = AudioSegment.empty()
+        fonemas_encontrados = 0
+        lista_fonemas = aplanar_lista_fonemas(lista_fonemas)
+        print(f"\n--- Concatenando {len(lista_fonemas)} segmentos ---")
+        logging.info(f"(lista_fonemas) {lista_fonemas}")
+        for fono in lista_fonemas:
+            # Si el fonema es una pausa, usar un segmento silencioso
+            if fono.lower() == 'pau' or fono in {",", ".", ";", ":", "?", "!"}:
+                # Las pausas pueden tener diferente duración según la puntuación,
+                # pero aquí usamos una duración estándar (ej. 200ms)
+                fono_audio = AudioSegment.silent(duration=400) 
+            elif fono.lower() == 'pau pau':
+                fono_audio = AudioSegment.silent(duration=900)
+                
             else:
-                print(f"Advertencia: Archivo {archivo} no encontrado")
-
-        audio_final.export(output, format="wav")
-        return output
-
-    def reproducir_fonemas_palabra(self, lista_fonemas, output="palabra.wav"):
-        """
-        Convierte una lista de fonemas en un audio de palabra completa.
-        """
-        return self.generar_palabra_completa(lista_fonemas, "palabra_temp")
-
-    def reproducir_fonemas_oracion(self, oracion, output="oracion.wav", pausa_entre_palabras=150):
-        """
-        Reproduce una oración completa donde cada elemento es una palabra (lista de fonemas)
-        Genera cada palabra completa en un solo comando y luego las une con pausas.
-        
-        Args:
-            oracion: Lista de palabras, donde cada palabra es una lista de fonemas
-            output: Nombre del archivo de salida
-            pausa_entre_palabras: Duración de la pausa entre palabras en milisegundos
-        """
-        if not isinstance(oracion, list):
-            raise ValueError("oracion debe ser una lista de palabras")
-        
-        archivos_palabras = []
-        
-        # Generar cada palabra completa
-        for i, palabra in enumerate(oracion):
-            if not isinstance(palabra, list):
-                raise ValueError("Cada elemento de la oración debe ser una lista de fonemas")
+                fono_filename = fono.upper() + ".wav"
+                full_path = os.path.join(self.path_audios, fono_filename)
+                
+                try:
+                    fono_audio = AudioSegment.from_file(full_path, format="wav")
+                    fonemas_encontrados += 1
+                except FileNotFoundError:
+                    print(f"   [ERROR] Fonema no encontrado: {fono_filename}. Usando una pausa corta.")
+                    # Si no encuentra el archivo, inserta una pausa en su lugar para evitar que el proceso se detenga.
+                    fono_audio = AudioSegment.silent(duration=50) 
+                except Exception as e:
+                    print(f"   [ERROR] No se pudo procesar {fono_filename}: {e}")
+                    fono_audio = AudioSegment.silent(duration=50) 
             
-            # Generar archivo para esta palabra
-            archivo_palabra = self.generar_palabra_completa(palabra, f"palabra_{i}")
-            archivos_palabras.append(archivo_palabra)
-        
-        # Unir todas las palabras con pausas
-        audio_final = AudioSegment.silent(duration=50)  # Silencio inicial
-        
-        for i, archivo_palabra in enumerate(archivos_palabras):
-            # Agregar la palabra
-            segmento_palabra = AudioSegment.from_wav(archivo_palabra)
-            audio_final += segmento_palabra
-            
-            # Agregar pausa después de cada palabra (excepto la última)
-            if i < len(archivos_palabras) - 1:
-                audio_final += AudioSegment.silent(duration=pausa_entre_palabras)
-        
-        audio_final.export(output, format="wav")
-        print(f"Oración guardada en: {output}")
-        return output
+            # Concatenar el segmento (fono o pausa)
+            audio_final += fono_audio
 
-    def limpiar_temporales(self):
-        """
-        Limpia los archivos temporales en la carpeta tmp_fonemas
-        """
-        for archivo in os.listdir(self.tmp_dir):
-            ruta_archivo = os.path.join(self.tmp_dir, archivo)
-            if os.path.isfile(ruta_archivo):
-                os.remove(ruta_archivo)
-        print("Archivos temporales limpiados")
+        if fonemas_encontrados == 0:
+            print("Error: No se pudo encontrar ningún fonema de voz.")
+            return False
+
+        output_full_path = os.path.join(self.output_path, nombre_archivo_salida)
+        try:
+            audio_final.export(output_full_path, format="wav")
+            print(f"\n Síntesis completada. Archivo guardado en: {output_full_path}")
+            return True
+        except Exception as e:
+            print(f"\nError al exportar el archivo: {e}")
+            return False
+
+# ----------------------------------------------------------------------
+# --- FUNCIÓN DE PROCESAMIENTO DE INPUT ---
+# ----------------------------------------------------------------------
+
+def aplanar_lista_fonemas(fonema_input_estructurado: list) -> list:
+    """
+    Toma la lista estructurada de fonemas (lista de listas y cadenas) y la aplana 
+    en una única lista secuencial de fonemas.
+
+    :param fonema_input_estructurado: La segunda parte de tu input con listas de fonemas por palabra.
+    :return: Una lista simple con todos los fonemas y pausas en orden.
+    """
+    lista_plana = []
+    
+    for elemento in fonema_input_estructurado:
+        if isinstance(elemento, list):
+            # Si es una lista (una palabra), añadir sus fonemas uno por uno
+            lista_plana.extend(elemento)
+        elif isinstance(elemento, str):
+            # Si es una cadena (ej. 'pau', ',', '!', etc.), añadirla directamente
+            lista_plana.append(elemento)
+            
+    return lista_plana
+
+# ----------------------------------------------------------------------
+# --- EJEMPLO DE EJECUCIÓN CON TU INPUT ---
+# ----------------------------------------------------------------------
+
+# if __name__ == "__main__":
+    
+#     # Tu Input Estructurado (La segunda lista que me proporcionaste)
+#     # Esta es la lista que contiene listas de fonemas y las cadenas 'pau'.
+#     fonemas_para_procesar = [
+#         ['B', 'IH1', 'JH', 'AH0', 'N'], ['R', 'AA1', 'B', 'AH0', 'N', 'S', 'AH0', 'N'], 'pau', 
+#         ['IH1', 'Z'], ['OW1', 'N', 'N'], ['AO0', 'F'], ['DH', 'EY0'], 
+#         ['B', 'EH1', 'S', 'T'], ['R', 'AH1', 'N', 'IH0', 'NG', 'B', 'AE2'], 
+#         ['IH0', 'N'], ['DH', 'EY0'], ['N', 'N', 'L'], 'pau', 'pau', 
+#         ['HH'], ['W', 'AA1', 'Z'], ['B', 'AO1', 'R', 'N'], ['AO1', 'N'], 
+#         ['S', 'EH0', 'P', 'T', 'EH1', 'B', 'B', 'ER0'], ['T', 'W', 'EH1', 'N', 'T', 'IY0', 'W', 'AH2', 'N'], 
+#         ['AO0', 'F'], ['T', 'W', 'UW1'], ['TH', 'AW1', 'Z', 'AH0', 'N', 'D'], 
+#         ['AE1', 'N', 'D'], ['T', 'W', 'UW1'], ['AE1', 'N', 'D'], 
+#         ['HH', 'IH1', 'Z'], ['K', 'AA1', 'N', 'T', 'R', 'AE2', 'K', 'T'], 
+#         ['IH1', 'Z'], ['W', 'ER1', 'TH', 'TH'], ['T', 'W', 'EH1', 'L', 'V'], 
+#         ['D', 'AA1', 'L', 'ER0', 'Z'], 'pau', 'pau', 
+#         ['F', 'IH1', 'F', 'T', 'IY0'], ['M', 'IH1', 'L', 'Y', 'AH0', 'N'], 
+#         ['P', 'ER0'], ['Y', 'IH1', 'R'], 'pau', 'pau'
+#     ]
+
+#     # 1. Aplanar la lista de fonemas
+#     fonemas_secuenciales = aplanar_lista_fonemas(fonemas_para_procesar)
+    
+#     # 2. Inicializar el reproductor
+#     tts_engine = Reproductor(
+#         path_audios="./fonemas/", 
+#         output_path="./output_synthesis"
+#     )
+    
+#     # 3. Concatenar y guardar el archivo final
+#     tts_engine.concatenar_fonemas(
+#         lista_fonemas=fonemas_secuenciales,
+#         nombre_archivo_salida="bijan_robinson_bio.wav"
+#     )
+    
+#     # Resultado de la lista aplanada (ejemplo de los primeros fonemas)
+#     print("\nPrimeros 10 fonemas a concatenar (Aplanados):")
+#     print(fonemas_secuenciales[:10])

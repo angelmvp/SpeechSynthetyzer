@@ -17,22 +17,22 @@ class DatasetMVP(torch.utils.data.Dataset):
                 palabra = linea[0]
                 fonos = linea[1:]
                 fonosNormalizados = self.vocab.normalizeFono(fonos)
-                
+
                 #print(fonos)
                 palabraNormalizada=self.vocab.normalizeWord(palabra)
-                
                 x= self.vocab.word_to_indexes(palabraNormalizada)
                 y = self.vocab.phones_to_indexes(fonosNormalizados)
+                y = y + [2]# añadimos el indice EOS
                 # print(palabraNormalizada,fonosNormalizados)
                 # print(x,y)
                 self.data.append((x,y))
         random.shuffle(self.data)
         self.data =self.data[:self.N]
-    
+
     def __getitem__(self, index):
         x = self.data[index][0]
         y = self.data[index][1]
         return torch.tensor(x),torch.tensor(y)
     def __len__(self):
         return len(self.data)
-    
+

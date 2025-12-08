@@ -1,5 +1,5 @@
 import torch.nn as nn
-
+import logging
 class modelMVPG2F(nn.Module):
     def __init__(self,vocab_size,phone_size,embed_dim,hidden_dim):
         super().__init__()
