@@ -8,7 +8,9 @@ import torch
 from utils.normalizerMVP import NormalizerMVP
 from reproductor.reproductor import Reproductor
 from torch.utils.data import random_split
-
+from prosodiamodules.prosodia import Prosodia_module
+from utils.token import Token
+from typing import List
 N=10000
 BATCH_SIZE = 64
 EMBEDDING_DIM = 128
@@ -33,7 +35,8 @@ print("MODELO_CREADO")
 
 predictor = PredictorPhones(model=modelo,vocab=vocabulario)
 print("PREDICTOR CREADO")
-
+prosodia = Prosodia_module()
+print("PROSODIA CREADO")
 
 def main_for_train():
 	entrenamiento = Train()
@@ -61,8 +64,17 @@ def main(path_model,modelo,oracion):
 	print("Oracion Original",oracion )
 	predictor.load(path_model)
 
-	
-	tokens,fonos = predictor.obtener_fonos_oracion(oracion)
+	Tokens:List[Token] = []
+	palabras = predictor.obtener_tokens_normalizados(oracion)
+	print("Palabras Normalizadas:",palabras)
+	palabras,fonos = predictor.obtener_fonos_oracion(palabras)
+	print("Fonos Obtenidos:",fonos)
+	prosodia_stress = prosodia.obtener_indices_prosodia(palabras)
+	print("Palabras con Prosodia:",palabras)
+	print("prosodia",prosodia_stress)
+	for i,palabra in enumerate(palabras):
+		tokenNuevo = Token(token=palabra,token_text=palabra,fonos=fonos[i],prosodia=prosodia_stress[i])
+		print(tokenNuevo.print())
 	for i in fonos:
 		if i == 'pau':
 			print(i, end=' | ')

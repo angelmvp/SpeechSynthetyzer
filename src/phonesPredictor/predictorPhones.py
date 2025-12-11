@@ -24,12 +24,14 @@ class PredictorPhones():
             prediccion_indices = prediccion_indices[:eos_position]
         fonos =self.vocab.indexes_to_phones(prediccion_indices)
         return fonos
-    def obtener_fonos_oracion(self,oracion):
+    def obtener_tokens_normalizados(self,oracion):
         normalizer = NormalizerMVP()
         palabras = normalizer.normalize(oracion)
+        return palabras
+    def obtener_fonos_oracion(self,palabras):
         todosFonos=[]
         todos_tokens=[]
-        PAUSAS={
+        SIGNOS={
             ",": "pau",
             ".": "pau pau",
             ";": "pau",
@@ -39,8 +41,8 @@ class PredictorPhones():
         }
 
         for token in palabras:
-            if token in PAUSAS:
-                todosFonos.append(PAUSAS[token])
+            if token in SIGNOS:
+                todosFonos.append('NA')
             else:
                 #logging.info(f"Processing word: {token}")
                 fonos = self.obtener_fonos_palabra(token)

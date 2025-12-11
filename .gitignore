@@ -12,3 +12,4 @@ vite-project/.env
 *.json
 frontend/public
 frontend/node_modules
+*.txt
