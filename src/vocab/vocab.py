@@ -8,6 +8,10 @@ class VocabMVP:
         self.read_symbols()
         self.creat_vocab_words()
     def read_phones(self):
+        """
+        Lee el archivo de fonemas y devuelve un diccionario con los tipos de fonemas 
+        como claves y listas de fonemas como valores.
+        """
         phones = {}
         filename="../data/cmudict.phones"
         file  = open(filename,'r',encoding='utf-8')
@@ -43,6 +47,10 @@ class VocabMVP:
     def indexes_to_word(self,indices):
         return [self.index_to_word[indice] for indice in indices]
     def normalizeFono(self,fonos):
+        """
+        Al leer los fonemas de un archivo, algunos pueden tener caracteres no deseados.
+        Esta función elimina esos caracteres no deseados de la lista de fonemas.
+        """
         fonosAEvitar = '#'
         index=0
         for fono in fonos:
@@ -51,6 +59,10 @@ class VocabMVP:
             index+=1
         return fonos
     def normalizeWord(self,word):
+        """
+        Al leer las palabras de un archivo, algunas pueden tener caracteres no deseados.
+        Esta función elimina esos caracteres no deseados de la palabra.
+        """
         letras_a_evitar = "#()"
         index = 0
         for letra in word:

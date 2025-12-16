@@ -54,7 +54,6 @@ class Prosodia_module():
 
         for word in words_array:
             tokens = tokenizer.tokenize(word)
-            print(word,tokens)
             if not tokens: # Handle words that might not tokenize (e.g., empty string)
                 continue
 
@@ -67,7 +66,6 @@ class Prosodia_module():
 
         # Add [SEP] token
         all_input_ids.append(tokenizer.convert_tokens_to_ids(["[SEP]"])[0])
-        print(all_input_ids)
         # Convert the list of numerical IDs into a PyTorch tensor, and create an attention mask tensor
         input_ids_tensor = torch.tensor([all_input_ids]).to(device_infer)
         attention_mask_tensor = torch.tensor([[1] * len(all_input_ids)]).to(device_infer) # All tokens are attended to
@@ -88,14 +86,14 @@ class Prosodia_module():
             if 0 <= main_piece_idx < len(predicted_indices_all_tokens):
                 predicted_tag_idx = predicted_indices_all_tokens[main_piece_idx]
                 tag = index_to_tag_infer.get(predicted_tag_idx, "NA") # Use "NA" for unknown tags
-                print(f"Word index {main_piece_idx}  word { words_array[i]} predicted tag index {predicted_tag_idx} tag {tag}")
+                #print(f"Word index {main_piece_idx}  word { words_array[i]} predicted tag index {predicted_tag_idx} tag {tag}")
                 prosodic_tags.append(tag)
             else:
                 prosodic_tags.append("NA") # Should not happen if `main_piece_idx` is within bounds
 
         return prosodic_tags
 
-print("The `obtener_indices_prosodia` function is prepared and the tokenizer will be initialized upon its first call.")
+#print("The `obtener_indices_prosodia` function is prepared and the tokenizer will be initialized upon its first call.")
 
 prosodia = Prosodia_module()
 print("PROSODIA MODULE INITIALIZED")

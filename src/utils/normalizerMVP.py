@@ -5,17 +5,19 @@ class NormalizerMVP:
     def __init__(self):
         pass
     def normalize(self,oracion):
-        print("NORMALIZANDO")
+        print("NORMALIZANDO oracion")
         oracion = self.convertir_abreviaturas(oracion)
-        oracion = self.separar_puntuacion(oracion)
         oracion=  self.convertir_fechas(oracion)
         oracion = self.convertir_monedas(oracion)
         oracion = self.convertir_numeros(oracion)
+        oracion = self.separar_puntuacion(oracion)
         oracion = self.convertir_minusculas(oracion)
         oracion = oracion.split()
-        print("oracion: Normalizada : ", oracion)
         return oracion
     def convertir_fechas(self, oracion):
+        """
+        Convierte fechas en formato DD/MM/YYYY  a una representación textual.
+        """
         
         months = {
             "01": 'january', "1": 'january',
@@ -44,25 +46,36 @@ class NormalizerMVP:
         oracion = re.sub(r'(\d{1,2})/(\d{1,2})/(\d{2,4})', replace_date, oracion)
         return oracion
     def convertir_monedas(self,oracion):
-        oracion = re.sub(r'\$(\d+)\.(\d{2})', r'\1 dollars with \2 cents', oracion)
-        oracion = re.sub(r'\$(\d+)', r'\1 dollars', oracion)
+        """
+        Convierte representaciones monetarias como $12.50 a '12 dollars with 50 cents'
+        """
+        oracion = re.sub(r'\$(\d+)\.(\d{2})', r'\1 dollars with \2 cents', oracion) # regex
+        oracion = re.sub(r'\$(\d+)', r'\1 dollars', oracion) # regex 
         return oracion
     def convertir_numeros(self, oracion):
+        """
+        Por medio de num2words convierte numeros a palabras
+        """
         oracion_normalizada = []
         for palabra in oracion.split():
             if palabra.isdigit():
-                palabra_normalizada = n2w.num2words(palabra)
-                oracion_normalizada.append(palabra_normalizada)
+                numero = n2w.num2words(palabra)
+                numero = numero.replace('-', ' ')
+                oracion_normalizada.append(numero)
             else:
                 oracion_normalizada.append(palabra)
         return ' '.join(oracion_normalizada)
     def convertir_abreviaturas(self, oracion):
+        """
+        Convierte abreviaturas comunes a su forma expandida.
+        """
         abreviaturas = {
             "Dr.": "Doctor",
             "Mr.":"Mister",
             "Ms.": "Mizz",
             "etc.": "etcetera",
             "RB" : "RunningBack",
+            "PG" : "PointGuard",
             "QB" : "QuarterBack",
             "TE" : "Tight End",
             "Km": "Kilometers",
@@ -72,16 +85,8 @@ class NormalizerMVP:
             oracion = oracion.replace(abreviatura, expansion)
         return oracion
     def separar_puntuacion(self, oracion):
-        puntuacion = string.punctuation
-        PAUSAS={
-            ",": "pau",
-            ".": "pau pau",
-            ";": "pau",
-            ":": "pau",
-            "?": "pau up",
-            "!": "pau up"
-        }
-        for simbolo in PAUSAS:
+        SIGNOS = ["," ,"." , ";" ,":" ,"?" ,"!"]
+        for simbolo in SIGNOS:
             oracion = oracion.replace(simbolo, f' {simbolo} ')
         return oracion
     def convertir_minusculas(self, oracion):

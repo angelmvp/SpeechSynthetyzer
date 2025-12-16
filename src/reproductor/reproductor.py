@@ -1,6 +1,8 @@
 from pydub import AudioSegment
 import os
 import logging
+from typing import List
+from utils.token import Token
 # --- CLASE REPRODUCTOR (Mantenida) ---
 
 class Reproductor():
@@ -15,25 +17,32 @@ class Reproductor():
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
             
-
+    def generar_audios(self,Tokens:List[Token]):
+        fonemas_modelo=[]
+        fonos_prosodia=[]
+        for token in Tokens:
+            if token.signo:
+                fonemas_modelo.append(token.token)
+                fonos_prosodia.append(token.token)
+            else:
+                fonemas_modelo.extend(token.fonos)
+                fonos_prosodia.extend(token.fonos_prosodia)
+        print(fonemas_modelo)
+        self.concatenar_fonemas(fonemas_modelo,nombre_archivo_salida="audio_modelo.wav")
+        self.concatenar_fonemas(fonos_prosodia,nombre_archivo_salida="audio_prosodia.wav")
     def concatenar_fonemas(self, lista_fonemas: list, nombre_archivo_salida: str = "frase_sintetizada.wav"):
         """
         Concatena una lista secuencial de fonemas para crear un archivo de audio WAV.
         """
         audio_final = AudioSegment.empty()
         fonemas_encontrados = 0
-        lista_fonemas = aplanar_lista_fonemas(lista_fonemas)
         print(f"\n--- Concatenando {len(lista_fonemas)} segmentos ---")
         logging.info(f"(lista_fonemas) {lista_fonemas}")
         for fono in lista_fonemas:
             # Si el fonema es una pausa, usar un segmento silencioso
-            if fono.lower() == 'pau' or fono in {",", ".", ";", ":", "?", "!"}:
-                # Las pausas pueden tener diferente duración según la puntuación,
-                # pero aquí usamos una duración estándar (ej. 200ms)
-                fono_audio = AudioSegment.silent(duration=400) 
-            elif fono.lower() == 'pau pau':
-                fono_audio = AudioSegment.silent(duration=900)
-                
+            if fono in [",", ".", ";", ":", "?", "!"]:
+                pausa_duracion = 300 if fono in [".", ":", "?", "!"] else 150
+                fono_audio = AudioSegment.silent(duration=pausa_duracion)
             else:
                 fono_filename = fono.upper() + ".wav"
                 full_path = os.path.join(self.path_audios, fono_filename)
@@ -65,9 +74,6 @@ class Reproductor():
             print(f"\nError al exportar el archivo: {e}")
             return False
 
-# ----------------------------------------------------------------------
-# --- FUNCIÓN DE PROCESAMIENTO DE INPUT ---
-# ----------------------------------------------------------------------
 
 def aplanar_lista_fonemas(fonema_input_estructurado: list) -> list:
     """

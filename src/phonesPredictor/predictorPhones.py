@@ -31,17 +31,11 @@ class PredictorPhones():
     def obtener_fonos_oracion(self,palabras):
         todosFonos=[]
         todos_tokens=[]
-        SIGNOS={
-            ",": "pau",
-            ".": "pau pau",
-            ";": "pau",
-            ":": "pau",
-            "?": "pau up",
-            "!": "pau up"
-        }
+        SIGNOS = ["," ,"." , ";" ,":" ,"?" ,"!" ]
 
         for token in palabras:
             if token in SIGNOS:
+                
                 todosFonos.append('NA')
             else:
                 #logging.info(f"Processing word: {token}")

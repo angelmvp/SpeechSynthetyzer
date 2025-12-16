@@ -8,8 +8,7 @@ class modelMVPG2F(nn.Module):
         self.fc=nn.Linear(hidden_dim*2,phone_size)
 
     def forward(self,x):
-        x_embedding= self.embedding(x) #Bathc siez,seqlen
-        outputs,zz = self.encoder(x_embedding)
-        logits= self.fc(outputs) # ( batc,seql n,phone size)
-        
+        x_embedding= self.embedding(x) #Batch size,seq len,embed dim
+        outputs,zz = self.encoder(x_embedding) # (batch,seq n,hidden dim*2)
+        logits= self.fc(outputs) 
         return logits

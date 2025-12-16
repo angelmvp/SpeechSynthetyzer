@@ -11,6 +11,9 @@ from torch.utils.data import random_split
 from prosodiamodules.prosodia import Prosodia_module
 from utils.token import Token
 from typing import List
+
+
+
 N=10000
 BATCH_SIZE = 64
 EMBEDDING_DIM = 128
@@ -63,28 +66,26 @@ def reproducirAudio(fonos):
 def main(path_model,modelo,oracion):
 	print("Oracion Original",oracion )
 	predictor.load(path_model)
-
 	Tokens:List[Token] = []
 	palabras = predictor.obtener_tokens_normalizados(oracion)
-	print("Palabras Normalizadas:",palabras)
+	print("\n\nPalabras Normalizadas:",palabras)
 	palabras,fonos = predictor.obtener_fonos_oracion(palabras)
-	print("Fonos Obtenidos:",fonos)
+	print("\n\nFonos Obtenidos:",fonos)
 	prosodia_stress = prosodia.obtener_indices_prosodia(palabras)
-	print("Palabras con Prosodia:",palabras)
-	print("prosodia",prosodia_stress)
+	print("\n\nPalabras con Prosodia:",palabras)
+	print("\nprosodia",prosodia_stress)
+	print("\n\n Todos los tokens con sus fonos obtenidos denustr omodelo y con la prosodia asignada:")
 	for i,palabra in enumerate(palabras):
+
 		tokenNuevo = Token(token=palabra,token_text=palabra,fonos=fonos[i],prosodia=prosodia_stress[i])
-		print(tokenNuevo.print())
-	for i in fonos:
-		if i == 'pau':
-			print(i, end=' | ')
-			continue
+		tokenNuevo.to_string()
+		Tokens.append(tokenNuevo)
 	rep = Reproductor()
-	rep.concatenar_fonemas(fonos)
+	rep.generar_audios(Tokens)
 
 
 path = "model50.pt"
-oracion = "Bijan Robinson, is one of the best RB in the NFL. He was born on 21/09/2002 and his contract is worth $12.50 million per year."
+oracion = "Bijan Robinson, is a player who plays in the falcons . He was born on 21/09/2002 . His contract is worth 12 million dollars per year. He has the record of the youngest player to reach 1000 yards, and has recorded 4 touchdowns in just 2 games! , unbelievable."
 
 main(path,modelo,oracion)
 

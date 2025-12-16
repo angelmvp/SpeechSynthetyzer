@@ -10,6 +10,9 @@ class DatasetMVP(torch.utils.data.Dataset):
         self.N=N
         self.readDataset()
     def readDataset(self):
+        """
+        Lee el archivo cmudict.dict y crea el dataset de pares (palabra, fonos)
+        """
         fileName = "../data/cmudict.dict"
         with open(fileName,'r') as file:
             for linea in file:
@@ -26,7 +29,7 @@ class DatasetMVP(torch.utils.data.Dataset):
                 # print(palabraNormalizada,fonosNormalizados)
                 # print(x,y)
                 self.data.append((x,y))
-        random.shuffle(self.data)
+        random.shuffle(self.data) # Mezclamos los datos para mayor aleatoriedad
         self.data =self.data[:self.N]
 
     def __getitem__(self, index):
