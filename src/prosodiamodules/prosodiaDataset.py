@@ -89,7 +89,6 @@ class Config:
         for k, v in dictionary.items():
             setattr(self, k, v)
 def load_dataset(config_dict,path=None):
-    print("config recibido",config_dict['datadir'])
     config = Config(config_dict)
     splits = dict()
     words = []
@@ -145,7 +144,6 @@ def load_dataset(config_dict,path=None):
     tag_to_index = {tag: index for index, tag in enumerate(tags)}
     index_to_tag = {index: tag for index, tag in enumerate(tags)}
 
-    print('Training sentences: {}'.format(len(splits["train"])))
 
     if config.sorted_batches:
         random.shuffle(splits["train"])

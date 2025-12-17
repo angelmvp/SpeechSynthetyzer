@@ -8,8 +8,8 @@ class Token:
         self.stress_prosodia = prosodia
         self.fonos_prosodia = self.set_fonos_prosodia() if prosodia!='NA' else None
         self.signo = True if token in ["," ,"." , ";" ,":" ,"?" ,"!" ] else False
-        self.pausa = True if token in ["," ,"." , ";" ,":" ,"?" ,"!" ] else False
-        self.pausa_level = self.set_pausa_level()
+        if self.signo:
+            self.reset_parameters()
     def set_fono(self,fono:str):
         self.fono=fono
     def get_stress_fono(self):
@@ -57,6 +57,10 @@ class Token:
         return fonos_prosodia
     def get_token(self):
         return self.token
-    
+    def reset_parameters(self):
+        self.fonos = None
+        self.stress_fono = None
+        self.stress_prosodia = None
+        self.fonos_prosodia = None
     def to_string(self):
         print( f'Token: {self.token} \n St_m: {self.stress_fono} Fonos: {self.fonos} \n St_prosodia: {self.stress_prosodia} Fonos_prosodia: {self.fonos_prosodia}')

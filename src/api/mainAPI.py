@@ -5,15 +5,14 @@ from pydantic import BaseModel
 from vocab.vocab import VocabMVP
 from g2fmodules.mvpg2f import modelMVPG2F
 from phonesPredictor.predictorPhones import PredictorPhones
-from utils.normalizerMVP import NormalizerMVP
-from dataset.dataset import DatasetMVP
-from dataloader.dataloader import DataLoaderMVP
 from reproductor.reproductor import Reproductor
-from fastapi.responses import JSONResponse
 import base64
 from pathlib import Path
 import logging
 import torch
+from prosodiamodules.prosodia import Prosodia_module
+from utils.token import Token
+from typing import List
 # from reproductor.reproductor import Reproductor
 import os
 
@@ -71,31 +70,71 @@ path_model = "model50.pt"
 
 predictor.load(path_model)
 rep = Reproductor()
+logger.info("REPRODUCTOR CREADO")
+prosodia = Prosodia_module()
+print("PROSODIA CREADO")
+OUTPUT_PATH = "./output_audios"
+rep = Reproductor(output_path=OUTPUT_PATH)
+print("REPRODUCTOR CREADO")
 @app.post("/predict")
 def predict(req: PredictRequest):
 	logger.info(f"Received text: {req.text}")
 	try:
+		oracion = req.text
+		print("Oracion Original",oracion )
+		predictor.load(path_model)
+		Tokens:List[Token] = []
+		palabras = predictor.obtener_tokens_normalizados(oracion)
+		print("\n\nPalabras Normalizadas:",palabras)
+		palabras,fonos = predictor.obtener_fonos_oracion(palabras)
+		print("\n\nFonos Obtenidos:",fonos)
+		prosodia_stress = prosodia.obtener_indices_prosodia(palabras)
+		print("\n\nPalabras con Prosodia:",palabras)
+		print("\nprosodia",prosodia_stress)
+		print("\n\n Todos los tokens con sus fonos obtenidos denustr omodelo y con la prosodia asignada:")
+		for i,palabra in enumerate(palabras):
+			tokenNuevo = Token(token=palabra,token_text=palabra,fonos=fonos[i],prosodia=prosodia_stress[i])
+			tokenNuevo.to_string()
+			Tokens.append(tokenNuevo)
+		
+		rep.generar_audios(Tokens)
+
 		tokens={}
-		tokens_text,fonos = predictor.obtener_fonos_oracion(req.text)
-		tokens['tokens']=tokens_text
-		tokens['fonos']=fonos
-		output_dir = Path(__file__).resolve().parent / ".." / "output_synthesis"
+		for token in Tokens:
+			tokens[token.get_token()] = {
+				"token": token.token,
+				"fonos": token.fonos,
+				"stress_fono": token.stress_fono,
+				"stress_prosodia": token.stress_prosodia,
+				"fonos_prosodia": token.fonos_prosodia,
+				"signo": token.signo,
+			}
+		output_dir = Path(__file__).resolve().parent / ".." / OUTPUT_PATH
 		output_dir.mkdir(parents=True, exist_ok=True)
 		audio_path = output_dir / "output_oracion.wav"
-		rep.concatenar_fonemas(fonos, nombre_archivo_salida=str(audio_path.name))
-		logger.info(f"Generated audio at: {audio_path}")
+		audio_sin_prosodia = output_dir / "output.wav"
+		audio_con_prosodia = output_dir / "output_prosodia.wav"
+		logger.info(f"Generated audio at: {audio_sin_prosodia} and {audio_con_prosodia}")
 
-		with open(audio_path, "rb") as f:
+		with open(audio_sin_prosodia, "rb") as f:
 			audio_bytes = f.read()
 			audio_b64 = base64.b64encode(audio_bytes).decode("ascii")
+		with open(audio_con_prosodia, "rb") as f:
+			audio_bytes = f.read()
+			audio_con_prosodia_b64 = base64.b64encode(audio_bytes).decode("ascii")
 
 		return {
-			"token": tokens,
+			"tokens": tokens,
 			"audio": {
 				"base64": audio_b64,
 				"mime": "audio/wav",
 				"filename": audio_path.name,
-			}
+			},
+			"audio_con_prosodia": {
+				"base64": audio_con_prosodia_b64,
+				"mime": "audio/wav",
+				"filename": audio_con_prosodia.name,
+			},
 		}
 	except Exception as e:
 		logger.exception("Error in prediction")

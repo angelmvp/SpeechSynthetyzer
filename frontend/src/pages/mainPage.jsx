@@ -2,9 +2,10 @@ import React, { useEffect } from "react"
 import {api} from  "../api/speectAPI.ts"
 export default function mainPage() {
   const [data,setData] = React.useState(null);
-  const [token,setToken] = React.useState(null);
+  const [tokens,setTokens] = React.useState([]);
   const [text,setText] = React.useState("");
   const [audioUrl,setAudioUrl] = React.useState("");
+  const [audioProsodiaUrl,setAudioProsodiaUrl] = React.useState("");
   useEffect(() => {
     const fetchData = async () => {
       const result = await api.get("/data");
@@ -29,14 +30,19 @@ export default function mainPage() {
       return;
     }
 
-    // Expecting { token: { text, phonemes, ... }, audio: { base64, mime, filename } }
-    const token = result?.token;
-    if (!token) {
-      setData("No token received");
+    // Expecting { tokens: {token_text: {...}}, audio, audio_con_prosodia }
+    const tokensObj = result?.tokens;
+    if (!tokensObj || typeof tokensObj !== "object") {
+      setData("No tokens received");
+      setTokens([]);
       return;
     }
 
-    setToken(token);
+    const entries = Object.entries(tokensObj).map(([key, value]) => ({
+      id: key,
+      ...(value || {}),
+    }));
+    setTokens(entries);
     setData(null);
 
     const audio = result?.audio;
@@ -53,6 +59,21 @@ export default function mainPage() {
     } else {
       setAudioUrl("");
     }
+
+    const audioProsodia = result?.audio_con_prosodia;
+    if (audioProsodia?.base64 && audioProsodia?.mime) {
+      const byteCharacters = atob(audioProsodia.base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: audioProsodia.mime });
+      const url = URL.createObjectURL(blob);
+      setAudioProsodiaUrl(url);
+    } else {
+      setAudioProsodiaUrl("");
+    }
   }
   const showAudio = async () =>{
     const audio = new Audio()
@@ -64,36 +85,45 @@ export default function mainPage() {
 
   return (
     <div>
-      <h2>TEXT TO SPEECH BY MVP Angel Martin vazquez Perez</h2>
-      <input type="text" value={text} onChange={e => setText(e.target.value)} />
-      <button onClick={sentText}>Send Text</button>
-      {data && <p>{data}</p>}
-
-      {token && (
-        <div style={{ marginTop: "16px" }}>
-          <h3>Token recibido</h3>
-          <p><strong>Texto:</strong> {text}</p>
-          {Array.isArray(token.tokens) && Array.isArray(token.fonos) ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {token.tokens.map((tkn, idx) => (
-                <div key={idx} style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "6px" }}>
-                  <div><strong>Token:</strong> {tkn}</div>
-                  <div><strong>Fonemas:</strong> {Array.isArray(token.fonos[idx]) ? token.fonos[idx].join(" ") : token.fonos[idx]}</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(token, null, 2)}</pre>
-          )}
-        </div>
-      )}
-
-      {audioUrl && (
+            {audioUrl && (
         <div style={{ marginTop: "16px" }}>
           <h3>Audio generado</h3>
           <audio src={audioUrl} controls />
         </div>
       )}
+
+      {audioProsodiaUrl && (
+        <div style={{ marginTop: "16px" }}>
+          <h3>Audio con prosodia</h3>
+          <audio src={audioProsodiaUrl} controls />
+        </div>
+      )}
+      <h2>TEXT TO SPEECH BY MVP Angel Martin vazquez Perez</h2>
+      <input type="text" value={text} onChange={e => setText(e.target.value)} />
+      <button onClick={sentText}>Send Text</button>
+      {data && <p>{data}</p>}
+
+      {tokens.length > 0 && (
+        <div style={{ marginTop: "16px", display: "grid", gap: "10px" }}>
+          <h3>Tokens recibidos</h3>
+          {tokens.map((tkn, idx) => (
+            <div key={`${tkn.id}-${idx}`} style={{ border: "1px solid #ccc", borderRadius: "6px", padding: "8px" }}>
+              <div><strong>Token:</strong> {tkn.token ?? tkn.id}</div>
+              {!tkn.signo ? (
+              <div>
+                <div><strong>Fonos:</strong> {Array.isArray(tkn.fonos) ? tkn.fonos.join(" ") : JSON.stringify(tkn.fonos)}</div>
+                <div><strong>Stress fono:</strong> {tkn.stress_fono ?? "N/A"}</div>
+                <div><strong>Stress prosodia:</strong> {tkn.stress_prosodia ?? "N/A"}</div>
+                <div><strong>Fonos prosodia:</strong> {Array.isArray(tkn.fonos_prosodia) ? tkn.fonos_prosodia.join(" ") : JSON.stringify(tkn.fonos_prosodia)}</div>
+              </div>
+              ) : null}
+              
+            </div>
+          ))}
+        </div>
+      )}
+
+
     </div>
   )
 }

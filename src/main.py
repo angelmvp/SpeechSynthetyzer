@@ -4,7 +4,6 @@ from dataloader.dataloader import DataLoaderMVP
 from g2fmodules.mvpg2f import modelMVPG2F
 from training.train import Train
 from phonesPredictor.predictorPhones import PredictorPhones
-import torch
 from utils.normalizerMVP import NormalizerMVP
 from reproductor.reproductor import Reproductor
 from torch.utils.data import random_split
@@ -80,6 +79,7 @@ def main(path_model,modelo,oracion):
 		tokenNuevo = Token(token=palabra,token_text=palabra,fonos=fonos[i],prosodia=prosodia_stress[i])
 		tokenNuevo.to_string()
 		Tokens.append(tokenNuevo)
+		
 	rep = Reproductor()
 	rep.generar_audios(Tokens)
 

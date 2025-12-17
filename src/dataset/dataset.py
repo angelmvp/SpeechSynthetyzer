@@ -1,5 +1,4 @@
 import torch
-import itertools
 from vocab.vocab import VocabMVP
 import random
 class DatasetMVP(torch.utils.data.Dataset):
